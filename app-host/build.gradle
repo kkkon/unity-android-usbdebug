@@ -29,6 +29,9 @@ dependencies {
     testCompile 'junit:junit:4.12'
 }
 
+sourceCompatibility = '1.6'
+targetCompatibility = '1.6'
+
 //// Define the main class for the application
 mainClassName = 'jp.ne.sakura.kkkon.unityandroidusbdebug.UnityMulticastHost'
 
