@@ -41,3 +41,17 @@ jar {
     }
 }
 
+task shadedJar(type: Jar, dependsOn: jar ) {
+    archiveName = "${project.name}-shaded.jar"
+    manifest {
+        attributes 'Main-Class': 'jp.ne.sakura.kkkon.unityandroidusbdebug.UnityMulticastHost'
+    }
+
+    from configurations.compile.collect { it.isDirectory() ? it : zipTree(it) }
+    //from "${sourceSets.main.output.classesDir}"
+    //from "${sourceSets.main.output.classesDirs}"
+    from "${buildDir}/classes/java/main"
+    from "${sourceSets.main.output.resourcesDir}"
+}
+
+build.dependsOn shadedJar
