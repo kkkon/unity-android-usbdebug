@@ -5,6 +5,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.OutputStream;
 import java.net.ConnectException;
 import java.net.InetSocketAddress;
@@ -56,6 +57,8 @@ public class UnityMulticastTunnelTarget
     {
         if ( null != mSocketClient )
         {
+            try { mSocketClient.getInputStream().close(); } catch ( Exception eClose ) {}
+            try { mSocketClient.getOutputStream().close(); } catch ( Exception eClose ) {}
             try { mSocketClient.close(); } catch ( Exception e ) {}
             mSocketClient = null;
         }
@@ -70,11 +73,21 @@ public class UnityMulticastTunnelTarget
     {
         assert null != mSocketServer;
         Socket socket = null;
+        InputStream in = null;
         try
         {
             socket = mSocketServer.accept();
+
+            socket.setSoTimeout( 10 * 1000 );
+            // check connected
+            {
+                in = socket.getInputStream();
+                in.read();
+            }
             if ( null != mSocketClient )
             {
+                try { mSocketClient.getInputStream().close(); } catch ( Exception e ) {}
+                try { mSocketClient.getOutputStream().close(); } catch ( Exception e ) {}
                 try { mSocketClient.close(); } catch ( Exception e ) {}
                 mSocketClient = null;
             }
@@ -108,8 +121,6 @@ public class UnityMulticastTunnelTarget
         OutputStream out = null;
         try
         {
-            mSocketClient.setSoTimeout( 10 * 1000 );
-
             {
                 out = mSocketClient.getOutputStream();
                 final String ipOrig = info.mIP;
@@ -127,6 +138,8 @@ public class UnityMulticastTunnelTarget
             DebugLog.e( TAG, "", e );
             if ( null != mSocketClient )
             {
+                try { mSocketClient.getInputStream().close(); } catch ( Exception eClose ) {}
+                try { mSocketClient.getOutputStream().close(); } catch ( Exception eClose ) {}
                 try { mSocketClient.close(); } catch ( Exception eClose ) {}
                 mSocketClient = null;
             }
@@ -136,6 +149,8 @@ public class UnityMulticastTunnelTarget
             DebugLog.e( TAG, "", e );
             if ( null != mSocketClient )
             {
+                try { mSocketClient.getInputStream().close(); } catch ( Exception eClose ) {}
+                try { mSocketClient.getOutputStream().close(); } catch ( Exception eClose ) {}
                 try { mSocketClient.close(); } catch ( Exception eClose ) {}
                 mSocketClient = null;
             }

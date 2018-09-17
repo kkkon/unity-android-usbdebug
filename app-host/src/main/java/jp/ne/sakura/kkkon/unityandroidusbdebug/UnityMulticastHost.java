@@ -8,6 +8,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketTimeoutException;
 
 import jp.ne.sakura.kkkon.lib.DebugLog;
 import jp.ne.sakura.kkkon.lib.UnityMulticastTunnelHost;
@@ -26,6 +27,8 @@ public class UnityMulticastHost
 
     private static ServerSocket mSocketServer = null;
     private static boolean mNeedStop = false;
+
+    private static ThreadControl mThreadControl = null;
 
     public static String findAndroidSDK_PlatformTools()
     {
@@ -49,16 +52,22 @@ public class UnityMulticastHost
         return null;
     }
 
-    public static void executeCmd( String[] args )
+    public static boolean executeCmd( String[] args )
     {
         assert null != args;
+        boolean result = false;
+
         ProcessBuilder pb = new ProcessBuilder( args );
         Process process = null;
         try
         {
             process = pb.start();
 
-            int ret = process.waitFor();
+            final int ret = process.waitFor();
+            if ( 0 == ret )
+            {
+                result = true;
+            }
             DebugLog.d( TAG, pb.command().toString() );
             DebugLog.d( TAG, " ret=" + ret );
         }
@@ -74,9 +83,22 @@ public class UnityMulticastHost
         {
             if ( null != process )
             {
+                {
+                    final InputStream in = process.getInputStream();
+                    try { in.close(); } catch ( Exception e ) { }
+                }
+                {
+                    final OutputStream out = process.getOutputStream();
+                    try { out.close(); } catch ( Exception e ) { }
+                }
+                {
+                    final InputStream in = process.getErrorStream();
+                    try { in.close(); } catch ( Exception e ) { }
+                }
                 try { process.destroy(); } catch ( Exception eClose ) { }
             }
         }
+        return result;
     }
 
     public static boolean start()
@@ -105,6 +127,9 @@ public class UnityMulticastHost
             }
             return false;
         }
+
+        mThreadControl = new ThreadControl();
+        mThreadControl.start();
 
         return true;
     }
@@ -154,6 +179,20 @@ public class UnityMulticastHost
             try { mSocketServer.close(); } catch ( Exception eClose ) {}
             mSocketServer = null;
         }
+
+        if ( null != mThreadControl )
+        {
+            mThreadControl.interrupt();
+            try
+            {
+                mThreadControl.join();
+            }
+            catch ( InterruptedException e )
+            {
+                DebugLog.d( "UnityMulticastHost", "exception", e );
+            }
+            mThreadControl = null;
+        }
     }
 
     public static boolean poll()
@@ -180,6 +219,10 @@ public class UnityMulticastHost
                 }
             }
         }
+        catch ( SocketTimeoutException e )
+        {
+            //DebugLog.d( TAG, "exception", e );
+        }
         catch ( IOException e )
         {
             DebugLog.e( TAG, "exception", e );
@@ -201,6 +244,33 @@ public class UnityMulticastHost
         return result;
     }
 
+    protected static class ThreadControl extends Thread
+    {
+        @Override
+        public void run()
+        {
+            while ( true )
+            {
+                if ( poll() )
+                {
+                    if ( mNeedStop )
+                    {
+                        break;
+                    }
+                }
+
+                try
+                {
+                    Thread.sleep(10 * 1000);
+                }
+                catch ( InterruptedException e )
+                {
+                    DebugLog.d( "UnityMulticastHost", "exception", e );
+                    break;
+                }
+            }
+        }
+    }
 
 
     public static void main( String[] args )
@@ -236,24 +306,62 @@ public class UnityMulticastHost
             return;
         }
 
-        // "adb forward --remove-all
-        executeCmd( new String[] {
-                androidPlatformTools + File.separator + "adb"
-                , "forward"
-                , "--remove-all"
-        });
+        while ( true )
+        {
+            if ( mNeedStop )
+            {
+                break;
+            }
 
-        // "adb forward tcp:54997 tcp:54997"
-        executeCmd( new String[] {
-                androidPlatformTools + File.separator + "adb"
-                , "forward"
-                , "tcp:" + UnityPlayerConst.PLAYER_MULTICAST_PORT
-                , "tcp:" + UnityPlayerConst.PLAYER_MULTICAST_PORT
-        });
+            boolean failSetup = false;
+
+            // "adb forward --remove-all
+            final boolean resultRemoveAll =
+            executeCmd( new String[] {
+                    androidPlatformTools + File.separator + "adb"
+                    , "forward"
+                    , "--remove-all"
+            });
+            if ( false == resultRemoveAll )
+            {
+                failSetup = true;
+            }
+
+            // "adb forward tcp:54997 tcp:54997"
+            final boolean resultMulticastRelay =
+            executeCmd( new String[] {
+                    androidPlatformTools + File.separator + "adb"
+                    , "forward"
+                    , "tcp:" + UnityPlayerConst.PLAYER_MULTICAST_PORT
+                    , "tcp:" + UnityPlayerConst.PLAYER_MULTICAST_PORT
+            });
+            if ( false == resultMulticastRelay )
+            {
+                failSetup = true;
+            }
+
+            if ( failSetup )
+            {
+                DebugLog.d( "UnityMulticastHost", "fail setup. adb forward" );
+                try
+                {
+                    Thread.sleep(10 * 1000);
+                }
+                catch ( InterruptedException e )
+                {
+                    DebugLog.d( "UnityMulticastHost", "exception", e );
+                    break;
+                }
+            }
+            else
+            {
+                break;
+            }
+        }
 
         while ( true )
         {
-            if ( poll() )
+            //if ( poll() )
             {
                 if ( mNeedStop )
                 {
@@ -285,15 +393,17 @@ public class UnityMulticastHost
                     }
                 }
             }
-
-            try
+            else
             {
-                Thread.sleep(10 * 1000);
-            }
-            catch ( InterruptedException e )
-            {
-                DebugLog.d( "UnityMulticastHost", "exception", e );
-                break;
+                try
+                {
+                    Thread.sleep(10 * 1000);
+                }
+                catch ( InterruptedException e )
+                {
+                    DebugLog.d( "UnityMulticastHost", "exception", e );
+                    break;
+                }
             }
         } // while
 

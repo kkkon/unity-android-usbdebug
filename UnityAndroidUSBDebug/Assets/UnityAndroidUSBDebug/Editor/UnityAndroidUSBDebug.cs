@@ -18,7 +18,7 @@ public class UnityAndroidUSBDebug
 
     private static string mDeviceSerial = string.Empty;
 
-    static string invoke( string name, string[] args, bool waitFinish = true )
+    static string invoke( string name, string[] args, bool waitFinish = true, bool redirectStrandard = true )
     {
         var info = new System.Diagnostics.ProcessStartInfo();
 
@@ -53,8 +53,11 @@ public class UnityAndroidUSBDebug
             info.Arguments = cmdArgs;
         }
 
-        info.RedirectStandardOutput = true;
-        info.RedirectStandardError = true;
+        if ( redirectStrandard )
+        {
+            info.RedirectStandardOutput = true;
+            info.RedirectStandardError = true;
+        }
 
         var process = new System.Diagnostics.Process();
         process.StartInfo = info;
@@ -62,16 +65,22 @@ public class UnityAndroidUSBDebug
         var sbOut = new System.Text.StringBuilder();
         var sbErr = new System.Text.StringBuilder();
 
-        process.OutputDataReceived += (sender, eventArgs) => sbOut.AppendLine(eventArgs.Data);
-        process.ErrorDataReceived += (sender, eventArgs) => sbErr.AppendLine(eventArgs.Data);
+        if ( redirectStrandard )
+        {
+            process.OutputDataReceived += (sender, eventArgs) => sbOut.AppendLine(eventArgs.Data);
+            process.ErrorDataReceived += (sender, eventArgs) => sbErr.AppendLine(eventArgs.Data);
+        }
 
         try
         {
             //Debug.Log( name + " " + info.Arguments );
             process.Start();
 
-            process.BeginOutputReadLine();
-            process.BeginErrorReadLine();
+            if ( redirectStrandard )
+            {
+                process.BeginOutputReadLine();
+                process.BeginErrorReadLine();
+            }
 
             if ( waitFinish )
             {
@@ -135,6 +144,7 @@ public class UnityAndroidUSBDebug
             , "Assets/UnityAndroidUSBDebug/Editor/app-host-shaded.jar"
             }
             , false
+            , false // redirectStandard
         );
     }
 

@@ -13,6 +13,13 @@ public class MulticastReceiver
     private static Object mLock = new Object();
     private static Thread mThread = null;
 
+    private static boolean mThreadRecvSocketError = false;
+
+    public static boolean isThreadRecvSocketError()
+    {
+        return mThreadRecvSocketError;
+    }
+
     public static void threadStart()
     {
         synchronized (mLock)
@@ -37,9 +44,13 @@ public class MulticastReceiver
                         continue;
                     }
 
-                    DebugLog.d( "", ni.getDisplayName() );
-                    DebugLog.d( "", "  " );
-                    DebugLog.d( "", ni.getInterfaceAddresses().toString() );
+                    {
+                        final StringBuffer sb = new StringBuffer();
+                        sb.append( ni.getDisplayName() );
+                        sb.append( "  " );
+                        sb.append( ni.getInterfaceAddresses().toString() );
+                        DebugLog.d( "", sb.toString() );
+                    }
                 }
             }
             catch ( java.net.SocketException e )
@@ -48,6 +59,7 @@ public class MulticastReceiver
             }
             if ( null == mThread )
             {
+                mThreadRecvSocketError = false;
                 mThread = new ThreadRecv();
                 mThread.start();
             }
@@ -70,6 +82,7 @@ public class MulticastReceiver
                     DebugLog.d( "", "exception", e );
                 }
             }
+            mThreadRecvSocketError = false;
         }
     }
 
@@ -86,6 +99,22 @@ public class MulticastReceiver
                     if ( null != info )
                     {
                         MulticastTunnel.pushPlayerInfo( info );
+                    }
+                    else
+                    {
+                        if ( UnityMulticastTunnel.mPoolTimeout )
+                        {
+                            // noting;
+                        }
+                        else
+                        {
+                            if ( UnityMulticastTunnel.mPoolSocketError )
+                            {
+                                mThreadRecvSocketError = true;
+                                DebugLog.d( "", "Socket Error" );
+                                break;
+                            }
+                        }
                     }
 
                     Thread.sleep(30 * 1000);

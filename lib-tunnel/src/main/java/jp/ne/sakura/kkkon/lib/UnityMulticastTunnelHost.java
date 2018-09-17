@@ -23,11 +23,16 @@ public class UnityMulticastTunnelHost
     private static final String TAG = "UnityMulticastTunnelHost";
 
     protected static Socket mSocket = null;
+    protected static boolean mIsConnected = false;
 
     public static void init()
     {
+        mIsConnected = false;
+
         Socket socket = null;
         SocketAddress addr = null;
+
+        OutputStream out = null;
 
         assert null == mSocket;
         try
@@ -37,6 +42,13 @@ public class UnityMulticastTunnelHost
             socket.setSoTimeout( 30*1000 );
 
             socket.connect( addr, 30*1000 );
+
+            // check connected
+            {
+                out = socket.getOutputStream();
+                out.write(1);
+                out.flush();
+            }
 
             mSocket = socket;
         }
@@ -54,9 +66,12 @@ public class UnityMulticastTunnelHost
     {
         if ( null != mSocket )
         {
+            try { mSocket.getOutputStream().close(); } catch ( Exception e ) {}
+            try { mSocket.getInputStream().close(); } catch ( Exception e ) {}
             try { mSocket.close(); } catch ( Exception e ) {}
             mSocket = null;
         }
+        mIsConnected = false;
     }
 
     public static UnityPlayerInfo poll()
@@ -64,6 +79,11 @@ public class UnityMulticastTunnelHost
         if ( null == mSocket )
         {
             init();
+        }
+
+        if ( null == mSocket )
+        {
+            return null;
         }
 
         InputStream in = null;
@@ -74,6 +94,13 @@ public class UnityMulticastTunnelHost
             in = mSocket.getInputStream();
             byte[] buff = new byte[1024];
             final int readed = in.read( buff );
+
+            if ( false == mIsConnected )
+            {
+                mIsConnected = true;
+                DebugLog.e( TAG, "Connected to Target" );
+            }
+
             if ( 0 < readed )
             {
                 final String line = new String(buff, 0, readed);
@@ -82,7 +109,12 @@ public class UnityMulticastTunnelHost
         }
         catch ( SocketTimeoutException e )
         {
-            DebugLog.d( TAG, "exception", e );
+            //DebugLog.d( TAG, "exception", e );
+            if ( false == mIsConnected )
+            {
+                mIsConnected = true;
+                DebugLog.v( TAG, "Connected to Target" );
+            }
         }
         catch ( IOException e )
         {
@@ -103,45 +135,82 @@ public class UnityMulticastTunnelHost
         {
             DebugLog.e( TAG, "", e );
         }
-        /*
-        SocketAddress group = null;
-        group = new InetSocketAddress( UnityPlayerConst.PLAYER_MULTICAST_GROUP, UnityPlayerConst.PLAYER_MULTICAST_PORT );
-        */
+
+        SocketAddress socketAddr = null;
+        socketAddr = new InetSocketAddress( UnityPlayerConst.PLAYER_MULTICAST_GROUP, UnityPlayerConst.PLAYER_MULTICAST_PORT );
+        //DebugLog.d( TAG, "socketAddr" + socketAddr );
 
         if ( null == group )
         {
             return;
         }
 
+        {
+            final String line = info.generateMessage();
+            DebugLog.d( TAG, "line=" + line );
+        }
+
         MulticastSocket socket = null;
         try
         {
-            socket = new MulticastSocket( UnityPlayerConst.PLAYER_MULTICAST_PORT );
-            socket.setSoTimeout( 3 * 1000 );
-            socket.joinGroup( group );
-
-            final String line = info.generateMessage();
-            DebugLog.d( TAG, "line=" + line );
-            final byte[] buff = line.getBytes();
-            DatagramPacket packet = new DatagramPacket( buff, buff.length, group, UnityPlayerConst.PLAYER_MULTICAST_PORT );
-            socket.send( packet );
-
-        }
-        catch ( SocketTimeoutException e )
-        {
-            DebugLog.d( TAG, "", e );
-        }
-        catch ( IOException e )
-        {
-            DebugLog.e( TAG, "", e );
-        }
-        finally
-        {
-            if ( null != socket )
+            java.util.Enumeration<java.net.NetworkInterface> nis = java.net.NetworkInterface.getNetworkInterfaces();
+            while ( nis.hasMoreElements() )
             {
-                try { socket.leaveGroup( group ); } catch ( Exception e ) {}
-                try { socket.close(); } catch ( Exception e ) {}
+                java.net.NetworkInterface ni = nis.nextElement();
+                if ( !ni.isUp() )
+                {
+                    continue;
+                }
+                if ( ! ni.supportsMulticast() )
+                {
+                    continue;
+                }
+
+                if ( ni.isLoopback() )
+                {
+                    //continue;
+                }
+
+                try
+                {
+                    socket = new MulticastSocket( UnityPlayerConst.PLAYER_MULTICAST_PORT );
+                    socket.setSoTimeout( 3 * 1000 );
+                    socket.setNetworkInterface( ni );
+                    socket.joinGroup( group );
+                    //socket.joinGroup( socketAddr, ni ); // humm.. 'NoRouteToHostException' at send. need.SetNetworkInterface
+
+                    final String line = info.generateMessage();
+                    //DebugLog.d( TAG, "line=" + line );
+                    final byte[] buff = line.getBytes();
+                    //DatagramPacket packet = new DatagramPacket( buff, buff.length, group, UnityPlayerConst.PLAYER_MULTICAST_PORT );
+                    DatagramPacket packet = new DatagramPacket( buff, buff.length, socketAddr );
+                    socket.send( packet );
+
+//                    DebugLog.d( "", ni.getDisplayName() );
+//                    DebugLog.d( "", "  " );
+//                    DebugLog.d( "", ni.getInterfaceAddresses().toString() );
+                }
+                catch ( SocketTimeoutException e )
+                {
+                    DebugLog.d( TAG, "", e );
+                }
+                catch ( IOException e )
+                {
+                    DebugLog.e( TAG, " ni=" + ni.getInterfaceAddresses().toString(), e );
+                }
+                finally
+                {
+                    if ( null != socket )
+                    {
+                        try { socket.leaveGroup( socketAddr, ni ); } catch ( Exception e ) {}
+                        try { socket.close(); } catch ( Exception e ) {}
+                    }
+                }
             }
+        }
+        catch ( java.net.SocketException e )
+        {
+
         }
     }
 }
