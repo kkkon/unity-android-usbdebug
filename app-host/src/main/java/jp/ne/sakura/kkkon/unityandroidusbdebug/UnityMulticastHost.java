@@ -301,20 +301,58 @@ public class UnityMulticastHost
             return;
         }
 
-        // "adb forward --remove-all
-        executeCmd( new String[] {
-                androidPlatformTools + File.separator + "adb"
-                , "forward"
-                , "--remove-all"
-        });
+        while ( true )
+        {
+            if ( mNeedStop )
+            {
+                break;
+            }
 
-        // "adb forward tcp:54997 tcp:54997"
-        executeCmd( new String[] {
-                androidPlatformTools + File.separator + "adb"
-                , "forward"
-                , "tcp:" + UnityPlayerConst.PLAYER_MULTICAST_PORT
-                , "tcp:" + UnityPlayerConst.PLAYER_MULTICAST_PORT
-        });
+            boolean failSetup = false;
+
+            // "adb forward --remove-all
+            final boolean resultRemoveAll =
+            executeCmd( new String[] {
+                    androidPlatformTools + File.separator + "adb"
+                    , "forward"
+                    , "--remove-all"
+            });
+            if ( false == resultRemoveAll )
+            {
+                failSetup = true;
+            }
+
+            // "adb forward tcp:54997 tcp:54997"
+            final boolean resultMulticastRelay =
+            executeCmd( new String[] {
+                    androidPlatformTools + File.separator + "adb"
+                    , "forward"
+                    , "tcp:" + UnityPlayerConst.PLAYER_MULTICAST_PORT
+                    , "tcp:" + UnityPlayerConst.PLAYER_MULTICAST_PORT
+            });
+            if ( false == resultMulticastRelay )
+            {
+                failSetup = true;
+            }
+
+            if ( failSetup )
+            {
+                DebugLog.d( "UnityMulticastHost", "fail setup. adb forward" );
+                try
+                {
+                    Thread.sleep(10 * 1000);
+                }
+                catch ( InterruptedException e )
+                {
+                    DebugLog.d( "UnityMulticastHost", "exception", e );
+                    break;
+                }
+            }
+            else
+            {
+                break;
+            }
+        }
 
         while ( true )
         {
