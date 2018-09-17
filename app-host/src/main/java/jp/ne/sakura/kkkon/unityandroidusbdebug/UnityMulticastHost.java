@@ -8,6 +8,7 @@ import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
 import java.net.SocketAddress;
+import java.net.SocketTimeoutException;
 
 import jp.ne.sakura.kkkon.lib.DebugLog;
 import jp.ne.sakura.kkkon.lib.UnityMulticastTunnelHost;
@@ -217,6 +218,10 @@ public class UnityMulticastHost
                     result = true;
                 }
             }
+        }
+        catch ( SocketTimeoutException e )
+        {
+            //DebugLog.d( TAG, "exception", e );
         }
         catch ( IOException e )
         {
