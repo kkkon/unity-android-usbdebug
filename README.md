@@ -10,11 +10,23 @@ These applications that multicast packet relay over usb.
 - goto releases(https://github.com/kkkon/unity-android-usbdebug/releases)
 - download and extract UnityAndroidUSBDebug_vX.X.zip to your unity project or empty unity project
 - select Unity menu 'UniAndUSBDebug > Install APK'
+- enable WiFi. (Unity does not use 'lo' interface.)
 - launch application, named UnityAndroidUSBDebug
   - click 'listen start' button
 - launch your application
 - select Unity menu 'UniAndUSBDebug > Start'
+- wait a few minutes.
 - MonoDevelop will find out 'AndroidPlayer @127.0.0.1'
+
+## please check, when not work
+
+- Development Build
+- Script Debugging
+- Scripting Backend: Mono
+
+### if not work break point
+
+- rebuild and re-install apk and run correct apk
 
 ## internals
 
