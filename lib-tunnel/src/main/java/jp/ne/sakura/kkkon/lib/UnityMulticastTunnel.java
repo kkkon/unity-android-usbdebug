@@ -86,7 +86,7 @@ public class UnityMulticastTunnel
 
                         }
                     }
-                    DebugLog.d( TAG, " from ni=" + niName + ", inetAddr=" + inetAddr );
+                    //DebugLog.d( TAG, " from ni=" + niName + ", inetAddr=" + inetAddr );
                 }
             }
 
