@@ -51,16 +51,22 @@ public class UnityMulticastHost
         return null;
     }
 
-    public static void executeCmd( String[] args )
+    public static boolean executeCmd( String[] args )
     {
         assert null != args;
+        boolean result = false;
+
         ProcessBuilder pb = new ProcessBuilder( args );
         Process process = null;
         try
         {
             process = pb.start();
 
-            int ret = process.waitFor();
+            final int ret = process.waitFor();
+            if ( 0 == ret )
+            {
+                result = true;
+            }
             DebugLog.d( TAG, pb.command().toString() );
             DebugLog.d( TAG, " ret=" + ret );
         }
@@ -79,6 +85,7 @@ public class UnityMulticastHost
                 try { process.destroy(); } catch ( Exception eClose ) { }
             }
         }
+        return result;
     }
 
     public static boolean start()
