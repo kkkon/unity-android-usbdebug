@@ -23,9 +23,12 @@ public class UnityMulticastTunnelHost
     private static final String TAG = "UnityMulticastTunnelHost";
 
     protected static Socket mSocket = null;
+    protected static boolean mIsConnected = false;
 
     public static void init()
     {
+        mIsConnected = false;
+
         Socket socket = null;
         SocketAddress addr = null;
 
@@ -57,6 +60,7 @@ public class UnityMulticastTunnelHost
             try { mSocket.close(); } catch ( Exception e ) {}
             mSocket = null;
         }
+        mIsConnected = false;
     }
 
     public static UnityPlayerInfo poll()
@@ -74,6 +78,13 @@ public class UnityMulticastTunnelHost
             in = mSocket.getInputStream();
             byte[] buff = new byte[1024];
             final int readed = in.read( buff );
+
+            if ( false == mIsConnected )
+            {
+                mIsConnected = true;
+                DebugLog.e( TAG, "Connected to Target" );
+            }
+
             if ( 0 < readed )
             {
                 final String line = new String(buff, 0, readed);
@@ -82,7 +93,12 @@ public class UnityMulticastTunnelHost
         }
         catch ( SocketTimeoutException e )
         {
-            DebugLog.d( TAG, "exception", e );
+            //DebugLog.d( TAG, "exception", e );
+            if ( false == mIsConnected )
+            {
+                mIsConnected = true;
+                DebugLog.v( TAG, "Connected to Target" );
+            }
         }
         catch ( IOException e )
         {
