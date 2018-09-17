@@ -57,6 +57,8 @@ public class UnityMulticastTunnelTarget
     {
         if ( null != mSocketClient )
         {
+            try { mSocketClient.getInputStream().close(); } catch ( Exception eClose ) {}
+            try { mSocketClient.getOutputStream().close(); } catch ( Exception eClose ) {}
             try { mSocketClient.close(); } catch ( Exception e ) {}
             mSocketClient = null;
         }
@@ -84,6 +86,8 @@ public class UnityMulticastTunnelTarget
             }
             if ( null != mSocketClient )
             {
+                try { mSocketClient.getInputStream().close(); } catch ( Exception e ) {}
+                try { mSocketClient.getOutputStream().close(); } catch ( Exception e ) {}
                 try { mSocketClient.close(); } catch ( Exception e ) {}
                 mSocketClient = null;
             }
@@ -134,6 +138,8 @@ public class UnityMulticastTunnelTarget
             DebugLog.e( TAG, "", e );
             if ( null != mSocketClient )
             {
+                try { mSocketClient.getInputStream().close(); } catch ( Exception eClose ) {}
+                try { mSocketClient.getOutputStream().close(); } catch ( Exception eClose ) {}
                 try { mSocketClient.close(); } catch ( Exception eClose ) {}
                 mSocketClient = null;
             }
@@ -143,6 +149,8 @@ public class UnityMulticastTunnelTarget
             DebugLog.e( TAG, "", e );
             if ( null != mSocketClient )
             {
+                try { mSocketClient.getInputStream().close(); } catch ( Exception eClose ) {}
+                try { mSocketClient.getOutputStream().close(); } catch ( Exception eClose ) {}
                 try { mSocketClient.close(); } catch ( Exception eClose ) {}
                 mSocketClient = null;
             }
