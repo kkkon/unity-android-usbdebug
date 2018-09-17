@@ -82,6 +82,18 @@ public class UnityMulticastHost
         {
             if ( null != process )
             {
+                {
+                    final InputStream in = process.getInputStream();
+                    try { in.close(); } catch ( Exception e ) { }
+                }
+                {
+                    final OutputStream out = process.getOutputStream();
+                    try { out.close(); } catch ( Exception e ) { }
+                }
+                {
+                    final InputStream in = process.getErrorStream();
+                    try { in.close(); } catch ( Exception e ) { }
+                }
                 try { process.destroy(); } catch ( Exception eClose ) { }
             }
         }
