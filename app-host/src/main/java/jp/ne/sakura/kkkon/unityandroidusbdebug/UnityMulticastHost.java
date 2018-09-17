@@ -27,6 +27,8 @@ public class UnityMulticastHost
     private static ServerSocket mSocketServer = null;
     private static boolean mNeedStop = false;
 
+    private static ThreadControl mThreadControl = null;
+
     public static String findAndroidSDK_PlatformTools()
     {
         {
@@ -106,6 +108,9 @@ public class UnityMulticastHost
             return false;
         }
 
+        mThreadControl = new ThreadControl();
+        mThreadControl.start();
+
         return true;
     }
 
@@ -154,6 +159,20 @@ public class UnityMulticastHost
             try { mSocketServer.close(); } catch ( Exception eClose ) {}
             mSocketServer = null;
         }
+
+        if ( null != mThreadControl )
+        {
+            mThreadControl.interrupt();
+            try
+            {
+                mThreadControl.join();
+            }
+            catch ( InterruptedException e )
+            {
+                DebugLog.d( "UnityMulticastHost", "exception", e );
+            }
+            mThreadControl = null;
+        }
     }
 
     public static boolean poll()
@@ -201,6 +220,33 @@ public class UnityMulticastHost
         return result;
     }
 
+    protected static class ThreadControl extends Thread
+    {
+        @Override
+        public void run()
+        {
+            while ( true )
+            {
+                if ( poll() )
+                {
+                    if ( mNeedStop )
+                    {
+                        break;
+                    }
+                }
+
+                try
+                {
+                    Thread.sleep(10 * 1000);
+                }
+                catch ( InterruptedException e )
+                {
+                    DebugLog.d( "UnityMulticastHost", "exception", e );
+                    break;
+                }
+            }
+        }
+    }
 
 
     public static void main( String[] args )
@@ -253,7 +299,7 @@ public class UnityMulticastHost
 
         while ( true )
         {
-            if ( poll() )
+            //if ( poll() )
             {
                 if ( mNeedStop )
                 {
@@ -285,15 +331,17 @@ public class UnityMulticastHost
                     }
                 }
             }
-
-            try
+            else
             {
-                Thread.sleep(10 * 1000);
-            }
-            catch ( InterruptedException e )
-            {
-                DebugLog.d( "UnityMulticastHost", "exception", e );
-                break;
+                try
+                {
+                    Thread.sleep(10 * 1000);
+                }
+                catch ( InterruptedException e )
+                {
+                    DebugLog.d( "UnityMulticastHost", "exception", e );
+                    break;
+                }
             }
         } // while
 
