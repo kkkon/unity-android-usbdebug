@@ -41,3 +41,15 @@ Java application append 'adb forward tcp:56XXX tcp:56XXX',
 which port used by mono debugger.
 
 
+## tested
+
+#### Moto G4 Plus(Android 6.0.1 MPJ24.139-48)
+- Win7, Unity 5.4.5f1 MonoDeveloper
+- Win7, Unity 5.6.6f2 MonoDeveloper
+- Win7, Unity 2017.4.8f1 MonoDeveloper
+
+#### Moto G6 Plus(Android 8.0.0 OPW27.113-45)
+- Win7, Unity 5.4.5f1 MonoDeveloper 
+- Win7, Unity 5.6.6f2 MonoDeveloper
+- Win7, Unity 2017.4.8f1 MonoDeveloper
+
