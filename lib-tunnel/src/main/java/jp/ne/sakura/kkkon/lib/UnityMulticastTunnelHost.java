@@ -32,6 +32,8 @@ public class UnityMulticastTunnelHost
         Socket socket = null;
         SocketAddress addr = null;
 
+        OutputStream out = null;
+
         assert null == mSocket;
         try
         {
@@ -40,6 +42,13 @@ public class UnityMulticastTunnelHost
             socket.setSoTimeout( 30*1000 );
 
             socket.connect( addr, 30*1000 );
+
+            // check connected
+            {
+                out = socket.getOutputStream();
+                out.write(1);
+                out.flush();
+            }
 
             mSocket = socket;
         }
