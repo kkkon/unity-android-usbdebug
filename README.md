@@ -1,9 +1,10 @@
 # unity-android-usbdebug
 
 Unity application enabled 'Script Debug' multicast packet.
-But it only network not over usb.
+But it only network, not over usb.
 
-These applications that multicast packet relay over usb.
+These applications relay multicast packet over usb, from Android target to Desktop host.
+And these application relay only 'Unity's Debug Multicast', which find target on C# debugger.
 
 ## how to use
 
