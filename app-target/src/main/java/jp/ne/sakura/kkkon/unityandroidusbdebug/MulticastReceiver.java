@@ -44,9 +44,13 @@ public class MulticastReceiver
                         continue;
                     }
 
-                    DebugLog.d( "", ni.getDisplayName() );
-                    DebugLog.d( "", "  " );
-                    DebugLog.d( "", ni.getInterfaceAddresses().toString() );
+                    {
+                        final StringBuffer sb = new StringBuffer();
+                        sb.append( ni.getDisplayName() );
+                        sb.append( "  " );
+                        sb.append( ni.getInterfaceAddresses().toString() );
+                        DebugLog.d( "", sb.toString() );
+                    }
                 }
             }
             catch ( java.net.SocketException e )
