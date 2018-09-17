@@ -57,6 +57,8 @@ public class UnityMulticastTunnelHost
     {
         if ( null != mSocket )
         {
+            try { mSocket.getOutputStream().close(); } catch ( Exception e ) {}
+            try { mSocket.getInputStream().close(); } catch ( Exception e ) {}
             try { mSocket.close(); } catch ( Exception e ) {}
             mSocket = null;
         }
