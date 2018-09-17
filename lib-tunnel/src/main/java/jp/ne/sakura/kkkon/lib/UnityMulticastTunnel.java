@@ -21,16 +21,24 @@ public class UnityMulticastTunnel
 {
     private static final String TAG = "UnityMulticastTunnel";
 
+    public static boolean mPoolTimeout = false;
+    public static boolean mPoolSocketError = false;
+
     public static UnityPlayerInfo poll()
     {
         UnityPlayerInfo info = null;
         InetAddress group = null;
+
+        mPoolTimeout = false;
+        mPoolSocketError = false;
+
         try
         {
             group = InetAddress.getByName( UnityPlayerConst.PLAYER_MULTICAST_GROUP );
         }
         catch ( UnknownHostException e )
         {
+            mPoolSocketError = true;
             DebugLog.e( TAG, "", e );
         }
         /*
@@ -60,16 +68,54 @@ public class UnityMulticastTunnel
                 final String line = new String(buff, 0, packet.getLength()-1);
                 DebugLog.d( TAG, line );
                 info = UnityPlayerInfo.parse( line );
+                {
+                    final java.net.InetAddress inetAddr = socket.getInterface();
+                    String niName = "";
+                    if ( null != socket )
+                    {
+                        try
+                        {
+                            final java.net.NetworkInterface ni = socket.getNetworkInterface();
+                            if ( null != ni )
+                            {
+                                niName = ni.getDisplayName();
+                            }
+                        }
+                        catch ( IOException ioE )
+                        {
+
+                        }
+                    }
+                    DebugLog.d( TAG, " from ni=" + niName + ", inetAddr=" + inetAddr );
+                }
             }
 
         }
         catch ( SocketTimeoutException e )
         {
+            mPoolTimeout = true;
             DebugLog.d( TAG, "", e );
         }
         catch ( IOException e )
         {
-            DebugLog.e( TAG, "", e );
+            mPoolSocketError = true;
+            String niName = "";
+            if ( null != socket )
+            {
+                try
+                {
+                    final java.net.NetworkInterface ni = socket.getNetworkInterface();
+                    if ( null != ni )
+                    {
+                        niName = ni.getDisplayName();
+                    }
+                }
+                catch ( IOException ioE )
+                {
+
+                }
+            }
+            DebugLog.e( TAG, "ni=" + niName, e );
         }
         finally
         {
