@@ -70,6 +70,11 @@ public class UnityMulticastTunnelHost
             init();
         }
 
+        if ( null == mSocket )
+        {
+            return null;
+        }
+
         InputStream in = null;
         UnityPlayerInfo info = null;
 
